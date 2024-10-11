@@ -1,4 +1,4 @@
-import * as remoteStores from "@/remote-stores.mf"; // FIX
+import * as remoteStores from "@remote-stores"; // FIX
 import { CombinedSliceReducer, PayloadAction, Reducer } from "@reduxjs/toolkit";
 import { Selector } from "react-redux";
 
@@ -14,7 +14,7 @@ type ExposeStoreType = {
 };
 
 type ModuleName = keyof typeof remoteStores;
-type ImportModuleType = typeof import("@/remote-stores.mf");
+type ImportModuleType = typeof import("@remote-stores");
 type SliceName<M extends ModuleName> = keyof ImportModuleType[M]["default"];
 
 type Selectors<

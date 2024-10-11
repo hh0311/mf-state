@@ -12,9 +12,12 @@
       "isolatedModules": true,
       "jsx": "preserve",
       "incremental": true,
+      "declaration": true,
+      "declarationMap": true,
+      "emitDeclarationOnly": true,
       "paths": {
         "@/*": ["./src/*"],
-        "expose-store": ["./src/remote-stores.mf.ts"]
+        "@remote-stores": ["./src/remote-stores.ts"]
       }
     },
     "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
