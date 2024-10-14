@@ -57,14 +57,13 @@ export const withComponentAvailable = <
       selectorName as never
     );
 
-    if (hideIfUnavailable)
-      if (
-        !isOnline ||
-        (dispatchName && !isDispatch) ||
-        (selectorName && !isSelector)
-      ) {
-        return fallback;
-      }
+    if (
+      !isOnline ||
+      (dispatchName && !isDispatch) ||
+      (selectorName && !isSelector)
+    ) {
+      if (hideIfUnavailable) return fallback;
+    }
 
     return <WrappedComponent {...props} />;
   };
