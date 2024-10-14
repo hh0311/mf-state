@@ -27,59 +27,16 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 ));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-// src/index.ts
-var src_exports = {};
-__export(src_exports, {
-  MFState: () => MFState,
+// src/index.d.ts
+var index_d_exports = {};
+__export(index_d_exports, {
   withComponentAvailable: () => withComponentAvailable
 });
-module.exports = __toCommonJS(src_exports);
-var remoteStores = __toESM(require("@remote-stores"));
-var import_react_redux = require("react-redux");
-
-// src/withComponentAvailable.tsx
-var import_react = require("react");
-var import_jsx_runtime = require("react/jsx-runtime");
-var withComponentAvailable = (WrappedComponent) => {
-  return (props) => {
-    const [isMounted, setIsMounted] = (0, import_react.useState)(false);
-    (0, import_react.useEffect)(() => {
-      setIsMounted(true);
-    }, []);
-    if (!isMounted) {
-      return null;
-    }
-    const { remoteConfig } = props;
-    const {
-      hideIfUnavailable = true,
-      fallback = null,
-      moduleName = "",
-      sliceName = "",
-      dispatchName = "",
-      selectorName = ""
-    } = remoteConfig || {};
-    const { isModuleOnline, isValidDispatch, isValidSelector } = MFState().useRemoteOnline();
-    const isOnline = isModuleOnline(moduleName);
-    const isDispatch = isValidDispatch(
-      moduleName,
-      sliceName,
-      dispatchName
-    );
-    const isSelector = isValidSelector(
-      moduleName,
-      sliceName,
-      selectorName
-    );
-    if (hideIfUnavailable) {
-      if (!isOnline || dispatchName && !isDispatch || selectorName && !isSelector) {
-        return fallback;
-      }
-    }
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(WrappedComponent, { ...props });
-  };
-};
+module.exports = __toCommonJS(index_d_exports);
 
 // src/index.ts
+var remoteStores = __toESM(require("@remote-stores"));
+var import_react_redux = require("react-redux");
 var isObjectEmpty = (object = {}) => {
   return Object.keys(object).length === 0;
 };
@@ -202,9 +159,50 @@ var MFState = (_rootReducer) => {
     useRemoteOnline
   };
 };
+
+// src/withComponentAvailable.tsx
+var import_react = require("react");
+var import_jsx_runtime = require("react/jsx-runtime");
+var withComponentAvailable = (WrappedComponent) => {
+  return (props) => {
+    const [isMounted, setIsMounted] = (0, import_react.useState)(false);
+    (0, import_react.useEffect)(() => {
+      setIsMounted(true);
+    }, []);
+    if (!isMounted) {
+      return null;
+    }
+    const { remoteConfig } = props;
+    const {
+      hideIfUnavailable = true,
+      fallback = null,
+      moduleName = "",
+      sliceName = "",
+      dispatchName = "",
+      selectorName = ""
+    } = remoteConfig || {};
+    const { isModuleOnline, isValidDispatch, isValidSelector } = MFState().useRemoteOnline();
+    const isOnline = isModuleOnline(moduleName);
+    const isDispatch = isValidDispatch(
+      moduleName,
+      sliceName,
+      dispatchName
+    );
+    const isSelector = isValidSelector(
+      moduleName,
+      sliceName,
+      selectorName
+    );
+    if (hideIfUnavailable) {
+      if (!isOnline || dispatchName && !isDispatch || selectorName && !isSelector) {
+        return fallback;
+      }
+    }
+    return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(WrappedComponent, { ...props });
+  };
+};
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
-  MFState,
   withComponentAvailable
 });
-//# sourceMappingURL=index.js.map
+//# sourceMappingURL=index.d.js.map

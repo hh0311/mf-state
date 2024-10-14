@@ -1,6 +1,6 @@
-import { Action, Select, ModuleName, SliceName, Dispatchers, Selectors } from './type.js';
+import { Action, Select, ModuleName, SliceName, Dispatchers, Selectors } from './type.mjs';
 import { CombinedSliceReducer, Selector } from '@reduxjs/toolkit';
-export { withComponentAvailable } from './withComponentAvailable.js';
+export { withComponentAvailable } from './withComponentAvailable.mjs';
 import '@remote-stores';
 import 'react-redux';
 import 'react';

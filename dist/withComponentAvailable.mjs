@@ -1,85 +1,6 @@
-"use strict";
-var __create = Object.create;
-var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __getProtoOf = Object.getPrototypeOf;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __export = (target, all) => {
-  for (var name in all)
-    __defProp(target, name, { get: all[name], enumerable: true });
-};
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-  }
-  return to;
-};
-var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
-  // If the importer is in node compatibility mode or this is not an ESM
-  // file that has been converted to a CommonJS file using a Babel-
-  // compatible transform (i.e. "__esModule" has not been set), then set
-  // "default" to the CommonJS "module.exports" for node compatibility.
-  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
-  mod
-));
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-
 // src/index.ts
-var src_exports = {};
-__export(src_exports, {
-  MFState: () => MFState,
-  withComponentAvailable: () => withComponentAvailable
-});
-module.exports = __toCommonJS(src_exports);
-var remoteStores = __toESM(require("@remote-stores"));
-var import_react_redux = require("react-redux");
-
-// src/withComponentAvailable.tsx
-var import_react = require("react");
-var import_jsx_runtime = require("react/jsx-runtime");
-var withComponentAvailable = (WrappedComponent) => {
-  return (props) => {
-    const [isMounted, setIsMounted] = (0, import_react.useState)(false);
-    (0, import_react.useEffect)(() => {
-      setIsMounted(true);
-    }, []);
-    if (!isMounted) {
-      return null;
-    }
-    const { remoteConfig } = props;
-    const {
-      hideIfUnavailable = true,
-      fallback = null,
-      moduleName = "",
-      sliceName = "",
-      dispatchName = "",
-      selectorName = ""
-    } = remoteConfig || {};
-    const { isModuleOnline, isValidDispatch, isValidSelector } = MFState().useRemoteOnline();
-    const isOnline = isModuleOnline(moduleName);
-    const isDispatch = isValidDispatch(
-      moduleName,
-      sliceName,
-      dispatchName
-    );
-    const isSelector = isValidSelector(
-      moduleName,
-      sliceName,
-      selectorName
-    );
-    if (hideIfUnavailable) {
-      if (!isOnline || dispatchName && !isDispatch || selectorName && !isSelector) {
-        return fallback;
-      }
-    }
-    return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(WrappedComponent, { ...props });
-  };
-};
-
-// src/index.ts
+import * as remoteStores from "@remote-stores";
+import { useDispatch, useSelector } from "react-redux";
 var isObjectEmpty = (object = {}) => {
   return Object.keys(object).length === 0;
 };
@@ -149,7 +70,7 @@ var MFState = (_rootReducer) => {
         console.warn("Selector does not exist");
         return defaultValue;
       }
-      return (0, import_react_redux.useSelector)(stateSelector);
+      return useSelector(stateSelector);
     } catch (error) {
       return defaultValue;
     }
@@ -164,7 +85,7 @@ var MFState = (_rootReducer) => {
     }
   };
   const useRemoteDispatch = () => {
-    const dispatch = (0, import_react_redux.useDispatch)();
+    const dispatch = useDispatch();
     return (callback) => {
       if (isObjectEmpty(actions)) {
         console.log("The remote-store.ts is empty, does not have any actions");
@@ -202,9 +123,49 @@ var MFState = (_rootReducer) => {
     useRemoteOnline
   };
 };
-// Annotate the CommonJS export names for ESM import in node:
-0 && (module.exports = {
-  MFState,
+
+// src/withComponentAvailable.tsx
+import { useEffect, useState } from "react";
+import { jsx } from "react/jsx-runtime";
+var withComponentAvailable = (WrappedComponent) => {
+  return (props) => {
+    const [isMounted, setIsMounted] = useState(false);
+    useEffect(() => {
+      setIsMounted(true);
+    }, []);
+    if (!isMounted) {
+      return null;
+    }
+    const { remoteConfig } = props;
+    const {
+      hideIfUnavailable = true,
+      fallback = null,
+      moduleName = "",
+      sliceName = "",
+      dispatchName = "",
+      selectorName = ""
+    } = remoteConfig || {};
+    const { isModuleOnline, isValidDispatch, isValidSelector } = MFState().useRemoteOnline();
+    const isOnline = isModuleOnline(moduleName);
+    const isDispatch = isValidDispatch(
+      moduleName,
+      sliceName,
+      dispatchName
+    );
+    const isSelector = isValidSelector(
+      moduleName,
+      sliceName,
+      selectorName
+    );
+    if (hideIfUnavailable) {
+      if (!isOnline || dispatchName && !isDispatch || selectorName && !isSelector) {
+        return fallback;
+      }
+    }
+    return /* @__PURE__ */ jsx(WrappedComponent, { ...props });
+  };
+};
+export {
   withComponentAvailable
-});
-//# sourceMappingURL=index.js.map
+};
+//# sourceMappingURL=withComponentAvailable.mjs.map

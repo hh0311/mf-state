@@ -1,13 +1,16 @@
 {
   "name": "mf-state-for-testing",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "00000",
   "main": "dist/index.js",
-  "types": "./dist/index.d.ts",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/withComponentAvailable.js"
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsup ",
-    "gen:dts": "npx -p typescript tsc ./src/index.ts --declaration --allowJs --emitDeclarationOnly --outDir src"
+    "build": "tsup --watch",
+    "dts": "npx -p typescript tsc ./src/index.ts ./src/type.ts  ./src/withComponentAvailable.tsx --declaration --allowJs --jsx react-jsx --emitDeclarationOnly --outDir src"
   },
   "repository": {
     "type": "git",

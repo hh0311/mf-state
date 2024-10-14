@@ -1,73 +1,85 @@
-import * as remoteStores from "@remote-stores"; // FIX
-import { CombinedSliceReducer, PayloadAction, Reducer } from "@reduxjs/toolkit";
-import { Selector } from "react-redux";
+import {
+  Action,
+  Dispatchers,
+  ExposeStoreType,
+  ModuleName,
+  Select,
+  Selectors,
+  SliceName,
+} from "@/type";
+import {
+  CombinedSliceReducer,
+  Selector as ReduxSelector,
+} from "@reduxjs/toolkit";
+import * as remoteStores from "@remote-stores";
 
-type RemoteType = {
-  name: string;
-  reducer: Reducer;
-  dispatchers: PayloadAction<unknown>;
-  selectors: Selector<unknown, unknown>;
+import { useDispatch, useSelector } from "react-redux";
+export * from "@/withComponentAvailable";
+
+const isObjectEmpty = (object: Record<string, any> = {}) => {
+  return Object.keys(object).length === 0;
 };
-
-type ExposeStoreType = {
-  [key: string]: RemoteType;
-};
-
-type ModuleName = keyof typeof remoteStores;
-type ImportModuleType = typeof import("@remote-stores");
-type SliceName<M extends ModuleName> = keyof ImportModuleType[M]["default"];
-
-type Selectors<
-  M extends ModuleName,
-  S extends SliceName<M> = SliceName<M>
-> = ImportModuleType[M]["default"][S] extends { selectors: infer T }
-  ? T
-  : never;
-
-type Dispatchers<
-  M extends ModuleName,
-  S extends SliceName<M> = SliceName<M>
-> = ImportModuleType[M]["default"][S] extends { dispatchers: infer T }
-  ? T
-  : never;
 
 const exposeStores = remoteStores;
 let rootReducer: CombinedSliceReducer<any>;
 
-export const safeSelect = <
-  M extends ModuleName,
-  S extends { [K in SliceName<M>]: Selectors<M, K> }
->(
-  selector: S,
-  defaultValue: unknown = null
-): S => {
-  try {
-    if (!selector) return (() => defaultValue) as any;
-    return selector;
-  } catch {
-    return (() => defaultValue) as any;
-  }
+const isRemoteModule = (key: ModuleName) => {
+  return typeof exposeStores[key].default === "object";
 };
 
 export const MFState = (_rootReducer?: CombinedSliceReducer<any>) => {
   if (_rootReducer) rootReducer = _rootReducer;
 
   const slices: ExposeStoreType = {};
-  const isRemoteModule = (key: ModuleName) => {
-    return typeof exposeStores[key].default === "object";
-  };
-
+  const actions: Action = {};
+  const selectors: Select = {};
   (function init() {
     if (!exposeStores) return;
-    for (const key in exposeStores) {
-      if (Object.prototype.hasOwnProperty.call(exposeStores, key)) {
-        const _key = key as ModuleName;
-        if (isRemoteModule(_key)) {
-          const store = exposeStores[_key].default as any;
-          for (const storeKey in store) {
-            slices[store[storeKey].name] = store[storeKey];
-          }
-        }
+
+    const initSlices = (moduleName: string) => {
+      const store = exposeStores[moduleName as ModuleName]?.default;
+      if (!isRemoteModule(moduleName) || !store) return;
+
+      Object.values(store).forEach((slice: any) => {
+        slices[slice.name] = slice;
+      });
+    };
+
+    const initActions = (moduleName: string) => {
+      const mod = exposeStores[moduleName as ModuleName]?.default || {};
+
+      Object.keys(mod).forEach((sliceName) => {
+        const dispatchers =
+          mod[sliceName as SliceName<ModuleName>]?.dispatchers || {};
+        actions[moduleName] = actions[moduleName] || {};
+
+        actions[moduleName][sliceName] = {
+          ...(actions[moduleName][sliceName] || {}),
+          ...dispatchers,
+        };
+      });
+    };
+
+    const initSelectors = (moduleName: string) => {
+      const mod = exposeStores[moduleName as ModuleName]?.default || {};
+
+      Object.keys(mod).forEach((sliceName) => {
+        const selectorsMap =
+          mod[sliceName as SliceName<ModuleName>]?.selectors || {};
+        selectors[moduleName] = selectors[moduleName] || {};
+
+        selectors[moduleName][sliceName] = {
+          ...(selectors[moduleName][sliceName] || {}),
+          ...selectorsMap,
+        };
+      });
+    };
+
+    for (const moduleName in exposeStores) {
+      if (Object.prototype.hasOwnProperty.call(exposeStores, moduleName)) {
+        initSlices(moduleName);
+        initActions(moduleName);
+        initSelectors(moduleName);
       }
     }
   })();
@@ -83,41 +95,96 @@ export const MFState = (_rootReducer?: CombinedSliceReducer<any>) => {
     }
   };
 
-  const dispatchers = <
-    M extends ModuleName,
-    S extends { [K in SliceName<M>]: Dispatchers<M, K> }
-  >(
-    moduleName: M
-  ): S => {
-    if (!moduleName || !remoteStores?.[moduleName]) return {} as S;
-    const mod = (remoteStores[moduleName] as any)["default"];
-    const dispatchers = Object.keys(mod).reduce((acc: any, sliceName: any) => {
-      acc[sliceName] = mod[sliceName].dispatchers;
-      return acc;
-    }, {});
-    return dispatchers;
+  const useRemoteSelector = <T>(
+    callback: (selector: Select) => ReduxSelector<any, T> | undefined,
+    defaultValue: T | null = null
+  ): T | null => {
+    try {
+      const stateSelector = callback?.(selectors);
+      if (!stateSelector) {
+        console.warn("Selector does not exist");
+        return defaultValue;
+      }
+
+      return useSelector(stateSelector);
+    } catch (error: any) {
+      // console.error(error.message);
+      return defaultValue;
+    }
+  };
+  const handleDispatchError = (
+    error: any,
+    callback: (action: Action) => Action
+  ) => {
+    const undefinedErr = "Cannot read properties of undefined";
+    const match = error.message.match(/reading '(.+?)'/);
+
+    if (match && error.message.startsWith(undefinedErr)) {
+      console.error(
+        `The (${match[1]}) method does not exist in the Remote Module. Please check: ${callback}`
+      );
+    }
   };
 
-  const selectors = <
-    M extends ModuleName,
-    S extends { [K in SliceName<M>]: Selectors<M, K> }
-  >(
-    moduleName: M,
-    callback?: (selectors: S) => void
-  ): S => {
-    if (!moduleName || !remoteStores?.[moduleName]) return {} as S;
-    const mod = (remoteStores[moduleName] as any)["default"];
-    const selectors = Object.keys(mod).reduce((acc: any, sliceName: any) => {
-      acc[sliceName] = mod[sliceName].selectors;
-      return acc;
-    }, {} as S);
-    callback?.(selectors);
-    return selectors;
+  const useRemoteDispatch = () => {
+    const dispatch = useDispatch();
+
+    return (callback: (action: Action) => Action) => {
+      if (isObjectEmpty(actions)) {
+        console.log("The remote-store.ts is empty, does not have any actions");
+        return;
+      }
+
+      try {
+        dispatch(callback(actions) as any);
+      } catch (error: any) {
+        handleDispatchError(error, callback);
+      }
+    };
+  };
+
+  const useRemoteOnline = () => {
+    const isModuleOnline = (moduleName: ModuleName) => {
+      return (
+        typeof exposeStores[moduleName as ModuleName]?.default === "object"
+      );
+    };
+
+    const isValidDispatch = <M extends ModuleName, S extends SliceName<M>>(
+      moduleName: M,
+      sliceName: S,
+      dispatch: keyof Dispatchers<M, S>
+    ) => {
+      if (!isModuleOnline || !sliceName || !dispatch) return false;
+
+      return !!exposeStores[moduleName]["default"]?.[sliceName]?.dispatchers?.[
+        dispatch
+      ];
+    };
+
+    const isValidSelector = <M extends ModuleName, S extends SliceName<M>>(
+      moduleName: M,
+      sliceName: S,
+      selector: keyof Selectors<M, S>
+    ) => {
+      if (!isModuleOnline || !sliceName || !selector) return false;
+
+      return !!exposeStores[moduleName]["default"]?.[sliceName]?.selectors[
+        selector
+      ];
+    };
+
+    return {
+      isModuleOnline,
+      isValidDispatch,
+      isValidSelector,
+    };
   };
 
   return {
     injectReducers,
-    dispatchers,
-    selectors,
+    useRemoteDispatch,
+    useRemoteSelector,
+    useRemoteOnline,
   };
 };
