@@ -35,10 +35,8 @@ var withComponentAvailable = (WrappedComponent) => {
       sliceName,
       selectorName
     );
-    if (hideIfUnavailable) {
-      if (!isOnline || dispatchName && !isDispatch || selectorName && !isSelector) {
-        return fallback;
-      }
+    if (!isOnline || dispatchName && !isDispatch || selectorName && !isSelector) {
+      if (hideIfUnavailable) return fallback;
     }
     return /* @__PURE__ */ jsx(WrappedComponent, { ...props });
   };
@@ -72,10 +70,6 @@ var MFState = (_rootReducer) => {
       Object.keys(mod).forEach((sliceName) => {
         const dispatchers = mod[sliceName]?.dispatchers || {};
         actions[moduleName] = actions[moduleName] || {};
-        actions[moduleName][sliceName] = {
-          ...actions[moduleName][sliceName] || {},
-          ...dispatchers
-        };
       });
     };
     const initSelectors = (moduleName) => {
@@ -119,15 +113,6 @@ var MFState = (_rootReducer) => {
       return defaultValue;
     }
   };
-  const handleDispatchError = (error, callback) => {
-    const undefinedErr = "Cannot read properties of undefined";
-    const match = error.message.match(/reading '(.+?)'/);
-    if (match && error.message.startsWith(undefinedErr)) {
-      console.error(
-        `The (${match[1]}) method does not exist in the Remote Module. Please check: ${callback}`
-      );
-    }
-  };
   const useRemoteDispatch = () => {
     const dispatch = useDispatch();
     return (callback) => {
@@ -138,7 +123,10 @@ var MFState = (_rootReducer) => {
       try {
         dispatch(callback(actions));
       } catch (error) {
-        handleDispatchError(error, callback);
+        console.error(
+          `[useRemoteDispatch::dispatch] Something went wrong. Check the function: ${callback}]`,
+          error.message
+        );
       }
     };
   };
@@ -147,11 +135,11 @@ var MFState = (_rootReducer) => {
       return typeof exposeStores[moduleName]?.default === "object";
     };
     const isValidDispatch = (moduleName, sliceName, dispatch) => {
-      if (!isModuleOnline || !sliceName || !dispatch) return false;
+      if (!isModuleOnline(moduleName) || !sliceName || !dispatch) return false;
       return !!exposeStores[moduleName]["default"]?.[sliceName]?.dispatchers?.[dispatch];
     };
     const isValidSelector = (moduleName, sliceName, selector) => {
-      if (!isModuleOnline || !sliceName || !selector) return false;
+      if (!isModuleOnline(moduleName) || !sliceName || !selector) return false;
       return !!exposeStores[moduleName]["default"]?.[sliceName]?.selectors[selector];
     };
     return {

@@ -1,7 +1,6 @@
 import { MFState } from "@/index";
 import { Dispatchers, ModuleName, Selectors, SliceName } from "@/type";
 import React, { useEffect, useState } from "react";
-import { Fragment } from "react/jsx-runtime";
 
 interface WithComponentAvailable<M extends ModuleName, S extends SliceName<M>> {
   remoteConfig?: {
